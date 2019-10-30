@@ -18,11 +18,11 @@ list_known_images = helper.get_files_dir(path_known_images, image_extension)
 
 face_recog = recognition.Face(list_known_images)
 
-face_recog.webcam()
+face_recog.webcam_Test()
 
-list_images_unknow = helper.get_files_dir(path_unknow_images, image_extension)
-for img in list_images_unknow:
-    face_recog.process(img)
+# list_images_unknow = helper.get_files_dir(path_unknow_images, image_extension)
+# for img in list_images_unknow:
+#     face_recog.process(img)
 
 
 

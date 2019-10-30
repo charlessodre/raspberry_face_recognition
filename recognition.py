@@ -3,6 +3,8 @@ import numpy as np
 import cv2
 import os
 
+import speech_text
+
 
 class Face(object):
 
@@ -128,15 +130,16 @@ class Face(object):
             # Grab a single frame of video
             ret, frame = video_capture.read()
 
-            # Resize frame of video to 1/4 size for faster face recognition processing
-            small_frame = cv2.resize(frame, (0, 0), fx=size_frame, fy=size_frame)
-
-            # Convert the unknown_image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-            rgb_small_frame = small_frame[:, :, ::-1]
-
             # Only process every other frame of video to save time
             if process_this_frame:
+                # Resize frame of video to 1/4 size for faster face recognition processing
+                small_frame = cv2.resize(frame, (0, 0), fx=size_frame, fy=size_frame)
+
+                # Convert the unknown_image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
+                rgb_small_frame = small_frame[:, :, ::-1]
+
                 face_names, face_locations, face_encodings, min_distance = self.comparison(rgb_small_frame)
+
             process_this_frame = not process_this_frame
 
             self.format_results(frame, face_locations, face_names, min_distance, scale_back=4)
@@ -186,12 +189,3 @@ class Face(object):
 
         # release resources
         cv2.destroyAllWindows()
-
-
-
-
-
-
-
-
-
