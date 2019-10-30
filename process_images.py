@@ -1,4 +1,4 @@
-import FaceRecognize
+import recognition
 import helper
 
 
@@ -16,7 +16,7 @@ helper.make_dirs(path_unknow_images, True)
 list_known_images = helper.get_files_dir(path_known_images, image_extension)
 
 
-face_recog = FaceRecognize.FaceRecognize(list_known_images)
+face_recog = recognition.Face(list_known_images)
 
 face_recog.webcam()
 

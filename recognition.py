@@ -4,7 +4,7 @@ import cv2
 import os
 
 
-class FaceRecognize(object):
+class Face(object):
 
     def __init__(self, list_known_images, sep_name="#", tolerance=0.55):
 
@@ -186,6 +186,10 @@ class FaceRecognize(object):
 
         # release resources
         cv2.destroyAllWindows()
+
+
+
+
 
 
 
