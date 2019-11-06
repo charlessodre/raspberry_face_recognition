@@ -2,8 +2,7 @@ import face_recognition
 import numpy as np
 import cv2
 import os
-
-import speech_text
+import helper
 
 
 class Face(object):
@@ -18,12 +17,12 @@ class Face(object):
             exit('No Known images found!')
 
     def get_list_face_encodings_and_names(self, list_known_images, sep_name):
-        '''
+        """
         # Get list know images
         :param list_known_images: List of images known
         :param sep_name: Image name separator
         :return: Return Face Encodings and Face names list
-        '''
+        """
 
         known_face_encodings = []
         known_face_names = []
@@ -38,7 +37,7 @@ class Face(object):
         return known_face_encodings, known_face_names
 
     def format_results(self, unknown_image, face_locations, face_names, distance, scale_back=1):
-        '''
+        """
         Format results
         :param unknown_image: image for face recognition
         :param face_locations: face location list
@@ -46,7 +45,7 @@ class Face(object):
         :param distance: min distance from face
         :param scale_back: restore frame scale size
         :return:
-        '''
+        """
         text_height = 1
         font = cv2.FONT_HERSHEY_PLAIN
         color_rect = (0, 255, 0)
@@ -79,50 +78,42 @@ class Face(object):
                         font, text_height, (0, 255, 255))
 
     def comparison(self, unknown_image):
-        '''
+        """
         Recognize faces in unknown image
         :param unknown_image: image for face recognition
         :return: face_names, face_locations, face_encodings, min_distance
-        '''
-        # Find all the faces and face encodings in the current frame of video
-        face_locations = face_recognition.face_locations(unknown_image)
-        face_encodings = face_recognition.face_encodings(unknown_image, face_locations)
-
+        """
         face_names = []
+        face_encodings = []
         min_distance = None
 
-        for face_encoding in face_encodings:
-            # See if the face is a match for the known face(s)
-            matches = face_recognition.compare_faces(self.known_face_encodings, face_encoding, tolerance=self.tolerance)
-            name = "Unknown"
+        # Find all the faces in the current frame of video
+        face_locations = face_recognition.face_locations(unknown_image)
 
-            # use the known face with the smallest distance to the new face
-            face_distances = face_recognition.face_distance(self.known_face_encodings, face_encoding)
-            best_match_index = np.argmin(face_distances)
-            if matches[best_match_index]:
-                name = self.known_face_names[best_match_index]
+        if len(face_locations) > 0:
+            # Find all the face encodings in the current frame of video
+            face_encodings = face_recognition.face_encodings(unknown_image, face_locations)
 
-            min_distance = face_distances[best_match_index]
+            for face_encoding in face_encodings:
+                # See if the face is a match for the known face(s)
+                matches = face_recognition.compare_faces(self.known_face_encodings, face_encoding,
+                                                         tolerance=self.tolerance)
+                name = "Unknown"
 
-            face_names.append(name)
+                # use the known face with the smallest distance to the new face
+                face_distances = face_recognition.face_distance(self.known_face_encodings, face_encoding)
+                best_match_index = np.argmin(face_distances)
+                if matches[best_match_index]:
+                    name = self.known_face_names[best_match_index]
+
+                min_distance = face_distances[best_match_index]
+
+                face_names.append(name)
 
         return face_names, face_locations, face_encodings, min_distance
 
-    def webcam(self, size_frame=0.25):
-        '''
-        Recognize faces from webcam
-        :param size_frame: size frame
-        :return:
-        '''
-
-        # open webcam
-        video_capture = cv2.VideoCapture(0)
-
-        if not video_capture.isOpened():
-            print("Could not open webcam!")
-            exit()
-
-        face_names = []
+    def process_frames(self, video_capture, size_frame=0.25, show=True, save_detected_face=False,
+                       path_output=None):
         process_this_frame = True
 
         while True:
@@ -144,26 +135,51 @@ class Face(object):
 
             self.format_results(frame, face_locations, face_names, min_distance, scale_back=4)
 
-            # Display the resulting unknown_image
-            cv2.imshow('Video', frame)
+            if show:
+                cv2.imshow('Recognized Face', frame)
+
+            if save_detected_face:
+                self.save_detected(frame, face_names, path_output)
 
             # Hit 'q' on the keyboard to quit!
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-        # Release handle to the webcam
+        # Release handle to the resources
         video_capture.release()
         cv2.destroyAllWindows()
 
-    def process(self, unknown_image_file, show=True, save=False, path_output=None):
-        '''
+    def analyse_image_webcam(self, device=0, size_frame=0.25, show=True, save_detected_face=False, path_output=None):
+        """
+        Recognize faces from webcam
+        :param device: Id of the opened video capturing device (i.e. a camera index).
+        :param size_frame:  Size frame
+        :param save_detected_face: Indicates whether the image will be saved
+        :param path_output: Path to save recognition results
+        :return:
+        """
+        # open webcam
+        video_capture = cv2.VideoCapture(device)
+
+        if not video_capture.isOpened():
+            exit("Could not open webcam!")
+
+        self.process_frames(video_capture, size_frame, show, save_detected_face, path_output)
+
+    def analyse_video_file(self, video_file, size_frame=0.25, show=True, save_detected_face=False, path_output=None):
+        # Open the input movie file
+        input_movie = cv2.VideoCapture(video_file)
+        self.process_frames(input_movie, size_frame, show, save_detected_face, path_output)
+
+    def analyse_image_file(self, unknown_image_file, show=True, save=False, path_output=None):
+        """
         Recognize faces from unknown image files
         :param unknown_image_file:  File image for face recognition
         :param show: Show recognition results
         :param save: Save recognition results
         :param path_output: Path to save recognition results
         :return:
-        '''
+        """
 
         # Load an image with an unknown face
         unknown_image = face_recognition.load_image_file(unknown_image_file)
@@ -175,13 +191,11 @@ class Face(object):
 
         self.format_results(unknown_image_BGR, face_locations, face_names, min_distance)
 
-        # display output (convert RGB to GBR)
         if show:
-            cv2.imshow("Face Recognized", unknown_image_BGR)
+            cv2.imshow("Recognized Face", unknown_image_BGR)
             # press any key to close window
             cv2.waitKey()
 
-        # save image with recognize name
         if save:
             # get image name into current_file
             current_file_name = unknown_image.split(os.sep)[-1]
@@ -189,3 +203,14 @@ class Face(object):
 
         # release resources
         cv2.destroyAllWindows()
+
+    def save_detected(self, image, face_names, path_output=None):
+        image_extension = '.jpeg'
+
+        if len(face_names) > 0:
+            if len(face_names) == 1:
+                name = '{}_{}_{}'.format(helper.get_current_hour_str(), face_names[0], image_extension)
+            else:
+                name = '{}_{}_{}'.format(helper.get_current_hour_str(), 'some_know_faces', image_extension)
+
+            cv2.imwrite(path_output + name, image)

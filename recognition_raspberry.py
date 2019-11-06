@@ -38,7 +38,7 @@ class Face(recognition.Face):
             self.format_results(output, face_locations, face_names, min_distance, scale_back=4)
 
             # Display the resulting unknown_image
-            cv2.imshow('Video', output)
+            cv2.imshow('Recognized Face', output)
 
             # Hit 'q' on the keyboard to quit!
             if cv2.waitKey(1) & 0xFF == ord('q'):
