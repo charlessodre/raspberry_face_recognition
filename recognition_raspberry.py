@@ -8,7 +8,7 @@ class Face(recognition.Face):
     def __init__(self, list_known_images, sep_name="#", tolerance=0.55):
         super(Face, self).__init__(list_known_images, sep_name)
 
-    def camera(self, resolution=(320, 240)):
+    def camera(self, resolution=(320, 240), scale_back=1):
         '''
         Recognize faces from camera raspberry
         :param resolution: image resolution (tuple (width, height))
@@ -27,15 +27,16 @@ class Face(recognition.Face):
 
         while True:
 
-            # Grab a single frame of video
-            camera.capture(output, format="rgb")
-
             # Only process every other frame of video to save time
             if process_this_frame:
+            
+                # Grab a single frame of video  (in BGR color)from the RPi camera as a numpy array
+                camera.capture(output, format="bgr")
                 face_names, face_locations, face_encodings, min_distance = self.comparison(output)
+ 
             process_this_frame = not process_this_frame
 
-            self.format_results(output, face_locations, face_names, min_distance, scale_back=4)
+            self.format_results(output, face_locations, face_names, min_distance, scale_back)
 
             # Display the resulting unknown_image
             cv2.imshow('Recognized Face', output)
@@ -45,4 +46,4 @@ class Face(recognition.Face):
                 break
 
         # Release handle
-        # cv2.destroyAllWindows()
+        cv2.destroyAllWindows()
